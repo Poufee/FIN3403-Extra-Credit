@@ -1,0 +1,36 @@
+import pandas as pd
+import yfinance as yf
+import numpy as np
+
+# Step 1: Load a list of tickers of all public firms
+all_tickers = pd.read_csv('https://yourwebsite.com/all_tickers.csv')['Ticker'].tolist()
+
+# Step 2: Filter tickers by sectors that are winning during hyperinflation and economic recession
+winning_sectors = ['Technology', 'Healthcare', 'Consumer Discretionary']
+
+# Step 3: Retrieve financial data for selected tickers
+financial_data = yf.download(all_tickers, start='2022-01-01', end='2023-04-25')
+
+# Step 4: Filter firms based on accounting ratios
+filtered_data = financial_data[
+    (financial_data['Current Assets'] > 3 * financial_data['Current Liabilities']) &
+    (financial_data['Operating Income'] > 4 * financial_data['Interest Expense'])
+]
+
+# Step 5: Calculate market price power indicators
+filtered_data['ROA'] = filtered_data['Net Income'] / filtered_data['Total Assets']
+filtered_data['ROE'] = filtered_data['Net Income'] / filtered_data['Total Equity']
+
+# Step 6: Select top firms based on ROA and ROE
+selected_firms = filtered_data.nlargest(10, ['ROA', 'ROE'])
+
+# Step 7: Calculate portfolio volatility
+selected_firms['Volatility'] = np.sqrt(252) * selected_firms['Close'].pct_change().rolling(window=30).std()
+
+# Step 8: Filter firms with portfolio volatility < 10%
+final_selected_firms = selected_firms[selected_firms['Volatility'] < 0.1]
+
+# Step 9: Display the final list of tickers
+final_tickers = final_selected_firms.index.tolist()
+print("Final list of tickers:")
+print(final_tickers)
