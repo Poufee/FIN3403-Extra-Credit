@@ -1,0 +1,52 @@
+import yfinance as yf
+
+# Step 2: Load financial data for all public firms
+
+# Load a list of tickers of all public firms
+all_tickers = pd.read_csv('https://yourwebsite.com/all_tickers.csv')['Ticker'].tolist()
+
+# Filter tickers by sectors that are winning during hyperinflation and economic recession
+winning_sectors = ['Technology', 'Healthcare', 'Consumer Discretionary']
+
+# Retrieve financial data for selected tickers
+financial_data = yf.download(all_tickers, start='2022-01-01', end='2023-04-25')
+
+
+# Step 3: Filter firms based on accounting ratios
+
+# Calculate current ratio and interest coverage ratio
+financial_data['Current_Ratio'] = financial_data['Current Assets'] / financial_data['Current Liabilities']
+financial_data['Interest_Coverage_Ratio'] = financial_data['Operating Income'] / financial_data['Interest Expense']
+
+# Filter firms with current ratio > 3 and interest coverage ratio > 4
+filtered_data = financial_data[(financial_data['Current_Ratio'] > 3) & (financial_data['Interest_Coverage_Ratio'] > 4)]
+
+
+# Step 4: Calculate market price power indicators
+
+# Calculate ROA and ROE
+filtered_data['ROA'] = filtered_data['Net Income'] / filtered_data['Total Assets']
+filtered_data['ROE'] = filtered_data['Net Income'] / filtered_data['Total Equity']
+
+
+# Step 5: Select top firms based on ROA and ROE
+
+# Select top 10 firms based on ROA and ROE
+selected_firms = filtered_data.nlargest(10, ['ROA', 'ROE'])
+
+
+# Step 6: Calculate portfolio volatility
+
+# Calculate annualized volatility for each selected firm
+selected_firms['Volatility'] = np.sqrt(252) * selected_firms['Close'].pct_change().rolling(window=30).std()
+
+# Filter firms with portfolio volatility < 10%
+final_selected_firms = selected_firms[selected_firms['Volatility'] < 0.1]
+
+
+# Step 7: Display the final list of tickers
+
+# Display the final list of tickers
+final_tickers = final_selected_firms.index.tolist()
+print("Final list of tickers:")
+print(final_tickers)
